@@ -1,11 +1,6 @@
 class Train
   
-  attr_accessor :speed, :number, :type, :wagons, :train_route 
-
-  private
-  attr_accessor :train_station #не нужна пользователю и другим классам
-
-  public
+  attr_accessor :speed, :number, :type, :wagons, :train_route, :train_station
 
   def initialize(number, type)
     @number = number.to_s 
@@ -29,9 +24,10 @@ class Train
     @wagons.delete(wagon) if @speed == 0 
   end
 
-  def train_route(route)  
+  def train_on_route(route)  
     @train_route = route 
     @train_station = @train_route.list_of_stations[0]
+    @train_station.train_comes(self)
   end
   
   def current_station 
@@ -40,7 +36,9 @@ class Train
 
   def go_next 
     if @train_station != @train_route.list_of_stations[-1] #проверка не конечная ли станция?
+       @train_station.train_leaves(self)
        @train_station = self.next_station     #текущая станция меняется на следующую станцию
+       @train_station.train_comes(self)
     else 
       @train_station = self.current_station
     end
@@ -48,7 +46,9 @@ class Train
 
   def go_back
     if station_number(@train_station) > 0
+      @train_station.train_leaves(self)
       @train_station = self.back_station
+      @train_station.train_comes(self)
     else 
       @train_station = self.current_station
     end
@@ -61,8 +61,6 @@ class Train
   def back_station
     @train_route.list_of_stations[station_number(@train_station)-1] if station_number(@train_station) > 0
   end  
-
-    private #техническая информация, не нужная ни пользователю, ни другим классам 
   
   def station_number(station) 
     station.station_index(@train_route)
