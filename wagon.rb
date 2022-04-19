@@ -1,5 +1,3 @@
 class Wagon
-
-  attr_accessor :type
-  
+  attr_accessor :type 
 end

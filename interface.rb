@@ -9,18 +9,22 @@ require_relative 'cargowagon'
 
 class Interface
 
-  attr_accessor :stations, :trains, :route, :first, :last, :current
+private
+
+  attr_accessor :stations, :trains, :route, :routes 
 
   def initialize 
     @stations = []    
     @trains = []
+    @routes = []
   end
   
   def station_create
     puts "Ввeдите название станции"
     station = Station.new(gets.chomp)
     @stations << station
-    self.interface
+    puts "Станция #{station.station_name} создана"
+    self.run
   end
 
   def train_create
@@ -29,7 +33,8 @@ class Interface
     puts "Грузовой или пассажирский? 1 - грузовой, 2 - пассажирский"
     gets.chomp == "1" ? train = CargoTrain.new(number) : train = PassengerTrain.new(number)
     @trains << train
-    self.interface
+    puts "Поезд номер #{number} - #{train.type} создан"
+    self.run
   end
 
   def route_create
@@ -37,43 +42,39 @@ class Interface
     choice = gets.chomp.to_i
     case choice
       when 1
-        puts "Введите названия начальной и конечной станций из списка:"
-        @stations.each { |station| print "#{station.station_name}, " }
-        print "\n"
-        first_station, last_station = gets.chomp, gets.chomp
-        @stations.each { |station| @first = station if station.station_name == first_station }
-        @stations.each { |station| @last = station if station.station_name == last_station }     
-        @route = Route.new(@first, @last)
-        puts "Ваш маршрут #{route.list_of_stations}"
+        puts "Введите названия начальной и конечной станций"
+        first_station, last_station = gets.chomp, gets.chomp 
+        route = Route.new(@stations.find { |station| station if station.station_name == first_station }, @stations.find { |station| station if station.station_name == last_station })
+        @routes << route
+        puts "Маршрут создан #{route.list_of_stations}"
       when 2 
+        self.route
         puts "Введите название промежуточной станции, которую надо добавить"
         station_dop = gets.chomp
         @stations.each { |station| @route.add_station(station) if station.station_name == station_dop }        
-        puts "Ваш маршрут #{route.list_of_stations}"
+        puts "Маршрут изменен"
       when 3
+        self.route
         puts "Введите название промежуточной станции, которую надо удалить"
         station_dop = gets.chomp
         @stations.each { |station| @route.remove_station(station) if station.station_name == station_dop }        
-        puts "Ваш маршрут #{route.list_of_stations}"
+        puts "Маршрут изменен"
       else
-        self.interface
+        self.run
     end
-    self.interface
+    self.run
   end
 
-  def train_on_route
-    puts "Выберите номер поезда из списка:"
-    @trains.each { |train| print "#{train.number} - #{train.type}, "}
-    print "\n"
+  def train_route
+    self.route
+    puts "Введите номер поезда, которому надо назначить маршрут"
     number = gets.chomp
-    @trains.each { |train| train.train_on_route(@route) if train.number == number }        
-    puts "Поезду номер #{number} назначен маршрут #{@route.list_of_stations}"
+    @trains.each { |train| train.train_route(@route) if train.number == number }
+    puts "Поезду номер #{number} назначен маршрут"
   end
 
   def train_add_wagon
-    puts "Выберите номер поезда, которому надо прицепить вагон, из списка:"
-    @trains.each { |train| print "#{train.number} - #{train.type}, "}
-    print "\n"
+    puts "Введите номер поезда, которому надо прицепить вагон"
     number = gets.chomp
     @trains.each { |train| 
       if train.number == number   
@@ -87,9 +88,7 @@ class Interface
   end
     
   def train_remove_wagon
-    puts "Выберите номер поезда, у которого надо отцепить последний вагон, из списка:"
-    @trains.each { |train| print "#{train.number} - #{train.type}, "}
-    print "\n"
+    puts "Введите номер поезда, у которого надо отцепить последний вагон"
     number = gets.chomp
     @trains.each { |train| 
       if train.number == number
@@ -101,25 +100,28 @@ class Interface
   end
 
   def train_go
-    puts "Выберите номер поезда, который поедет, из списка:"
-    @trains.each { |train| print "#{train.number} - #{train.type}, "}
-    print "\n"
+    puts "Введите номер поезда, который поедет"
     number = gets.chomp
     @trains.each { |train| 
       if train.number == number        
         puts "Куда едем? 1 - вперед, 2 - назад"
         gets.chomp.to_i == 1 ? train.go_next : train.go_back
-        @current = train.current_station
       end
     }
-    puts "Поезд номер #{number} прибыл на станцию #{@current.station_name}"
+    puts "Поезд #{number} прибыл на станцию"
   end
 
   def list_of_stations_and_trains
-    @stations.each { |station| puts "#{station.station_name} - #{station.trains}" }
+    puts "Список станций и поездов на них:"
+    @stations.each { |station| 
+      puts "На станции #{station.station_name} находятся поезда: "
+      station.trains.each { |train| puts "#{train.number}-#{train.type}"}
+    }
   end
 
-  def interface
+public
+
+  def run
     loop do      
       puts "Выберите, что вы хотите сделать 
       1 - создать станцию 
@@ -135,22 +137,28 @@ class Interface
       break if create == 0  #выходит только со второго ввода
       case create
         when 1
-          self.station_create
+          station_create
         when 2      
-          self.train_create
+          train_create
         when 3
-          self.route_create        
+          route_create        
         when 4
-          self.train_on_route
+          train_route
         when 5
-          self.train_add_wagon
+          train_add_wagon
         when 6
-          self.train_remove_wagon
+          train_remove_wagon
         when 7
-          self.train_go
+          train_go
         when 8
-          self.list_of_stations_and_trains        
+          list_of_stations_and_trains        
       end
     end
+  end
+
+  def route
+    puts "Выберите маршрут - введите названия начальной и конечно станций"
+    first_station, last_station = gets.chomp, gets.chomp
+    @routes.each { |route| @route = route if route.list_of_stations[0] == @stations.find { |station| station if station.station_name == first_station } && route.list_of_stations[-1] == @stations.find { |station| station if station.station_name == last_station } }
   end
 end

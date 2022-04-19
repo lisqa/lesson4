@@ -1,5 +1,5 @@
 class Train
-  
+
   attr_accessor :speed, :number, :type, :wagons, :train_route, :train_station
 
   def initialize(number, type)
@@ -17,14 +17,14 @@ class Train
   end
 
   def add_wagons(wagon)
-    @wagons << wagon if @speed == 0
+    @wagons << wagon if @speed == 0 && @type == wagon.type
   end
 
   def remove_wagons(wagon)
     @wagons.delete(wagon) if @speed == 0 
   end
 
-  def train_on_route(route)  
+  def train_route(route)  
     @train_route = route 
     @train_station = @train_route.list_of_stations[0]
     @train_station.train_comes(self)
